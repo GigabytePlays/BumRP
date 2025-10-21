@@ -4,10 +4,18 @@
 
 ## Features:
 
+<<<<<<< HEAD
 - Search trash bins/dumpsters for scrap.
 - Item rarity system.
 - Over 15 unique items, with values ranging from 1 to 200 dollars.
 - Inventory is saved to an external file (you wont lose your items when closing the game).
+=======
+- Search over 30 types of trash bin and dumpster props for scrap.
+- Item rarity system.
+- Over 15 unique items, with values ranging from 1 to 200 dollars.
+- Up to 3 selling locations.
+- **Basic** inventory system.
+>>>>>>> beta
 - More to come!
 
 ## Installation:
@@ -17,7 +25,11 @@
 3. Place BumRP.dll inside the scripts folder.
 
 ## How to use:
+<<<<<<< HEAD
 Go to a nearby dumpster, press E to search it (there's a chance to find nothing), then head to one of the scrap yard blip marked on the map and press G to sell your collected junk.
+=======
+Go to a nearby dumpster, press E to search it (there's a chance to find nothing), then head to one of the scrap yard blip marked on the map and press G to sell your collected scrap.
+>>>>>>> beta
 
 ---
 
