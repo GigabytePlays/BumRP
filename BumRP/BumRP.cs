@@ -16,6 +16,7 @@ public class BumRP : Script
     // ==== CONFIG ====
     private readonly Keys KeySearch = Keys.E;
     private readonly Keys KeySell = Keys.G;
+    private readonly Keys KeyShowInventory = Keys.I;
     private const float InteractDistance = 1.5f;
     private const int DumpsterCooldownSeconds = 120;
     private const string SaveFile = "scripts\\BumRP_inventory.txt";
@@ -252,16 +253,21 @@ public class BumRP : Script
         // rolls
         int rolls = RandomInt(1, 2);
         List<string> foundList = new List<string>();
+        int haulValue = 0;
 
         for (int i = 0; i < rolls; i++)
         {
             LootItem item = RollLoot();
             int qty = RandomInt(1, item.MaxQtyPerRoll);
-            AddItem(item.Name, qty);
-            foundList.Add(item.Name + " x" + qty);
+
+            AddItem(item, qty);
+
+            int gain = item.Value * qty;
+            haulValue += gain;
+            foundList.Add($"x{qty} {item.Name} (+${gain})");
         }
 
-        Notification.Show("You found: ~b~" + string.Join(", ", foundList) + "~s~.");
+        Notification.Show($"You found: \n~b~• {string.Join("\n• ", foundList)}~s~\nTotal: ~g~${haulValue}~s~.");
         SetDumpsterCooldown(dumpster.Handle);
     }
 
@@ -313,6 +319,12 @@ public class BumRP : Script
                 spot.Name,
                 "~g~Sucessful sale",
                 $"All items sold for ~g~${total}~s~.");
+        }
+
+        // Ver Inventário
+        if (e.KeyCode == KeyShowInventory)
+        {
+            ShowInventoryFeed();
         }
     }
 
@@ -411,10 +423,21 @@ public class BumRP : Script
     // ==== Inventário ====
     private void AddItem(string name, int qty)
     {
-        if (!inventory.ContainsKey(name)) inventory[name] = 0;
-        inventory[name] += qty;
+        var item = lootTable.FirstOrDefault(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        AddItem(item, qty);
+    }
+
+    private void AddItem(LootItem item, int qty)
+    {
+        if (item == null || qty <= 0) return;
+
+        if (!inventory.ContainsKey(item.Name)) inventory[item.Name] = 0;
+        inventory[item.Name] += qty;
         SaveInventory();
-        UIScreen.ShowSubtitle(name + " x" + qty + " (Total: " + inventory[name] + ")", 3000);
+
+        int gain = item.Value * qty;
+        // Mostra nome, quantidade adicionada, ganho potencial e total desse item
+        UIScreen.ShowSubtitle($"x{qty} {item.Name} (+${gain})  (Total: {inventory[item.Name]})", 3000);
     }
 
     private int ComputeInventoryValue()
@@ -463,6 +486,46 @@ public class BumRP : Script
         catch (Exception ex)
         {
             Notification.Show("Error loading inventory: " + ex.Message);
+        }
+    }
+
+    private void ShowInventoryFeed()
+    {
+        if (inventory.Count == 0)
+        {
+            Notification.Show("Your inventory is empty.");
+            return;
+        }
+
+        var lines = new List<string>();
+        int total = 0;
+
+        foreach (var kv in inventory.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var item = lootTable.FirstOrDefault(i => i.Name.Equals(kv.Key, StringComparison.OrdinalIgnoreCase));
+            int value = (item != null) ? item.Value : 0;
+            int qty = kv.Value;
+            int sub = value * qty;
+            total += sub;
+
+            lines.Add($"• x{qty} {kv.Key} (+${sub})");
+        }
+
+        const int LINES_PER_PAGE = 7;
+        int pages = (int)Math.Ceiling(lines.Count / (double)LINES_PER_PAGE);
+
+        for (int p = 0; p < pages; p++)
+        {
+            var slice = lines.Skip(p * LINES_PER_PAGE).Take(LINES_PER_PAGE);
+            bool isLast = (p == pages - 1);
+
+            string header = (pages > 1) ? $"Inventory ({p + 1}/{pages})" : "Inventory";
+            string body = string.Join("\n", slice);
+
+            if (isLast)
+                body += $"\nTotal value: ~g~${total}~s~";
+
+            Notification.Show($"{header}\n{body}");
         }
     }
 
